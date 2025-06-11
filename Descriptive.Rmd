@@ -1,0 +1,131 @@
+---
+title: "Lupus RGMX Análisis datos"
+author: "Hernández-Ledesma Ana Laura"
+date: "2025-06-11"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## STEP 1: Loading required packages and reading database
+```{r Reading database}
+library(tidyverse)
+library(ggplot2)
+library(dplyr)
+Data <- read.csv("~/Documents/R/Reporte_2025/Data_mayo25.csv", header=TRUE)
+dim(Data)
+```
+
+## STEP 2: Selecting and filtering data of interest
+```{r Selecting and filtering data of interest }
+data_curated <- Data %>%
+  filter(privacy_acceptance___1 == 1 &  (calculated_age >= 18 & calculated_age < 100)) %>%
+  filter(sex___1 != sex___2 & sex___2 != sex___1) %>% # para no tener registros con ambos sexos marcados
+  filter(lupus == 1) %>% # para quedarnos solo con lupus
+  select(
+    #Demographic data
+    sex___1, birth_date, calculated_age, lupus,  home, ocupation, school, last_degree, place_of_birth,
+    #Treatment
+    treatment___0, treatment___1, treatment___2, treatment___3, treatment___4,treatment___5, treatment___6, treatment___7, treatment___8, prednisolona,
+    #Clinical data
+    health_provider, comorbidities, nephritis, pregnancy)
+
+dim(data_curated)
+
+```
+
+## STEP 4: Demographic distribution by state
+```{r How many volunteers we have by state }
+data_states <- data_curated %>%
+  mutate(home = replace(home, home == 1, "Aguascalientes")) %>%
+  mutate(home = replace(home, home == 2, "Baja California")) %>%
+  mutate(home = replace(home, home == 3, "Baja California Sur")) %>%
+  mutate(home = replace(home, home == 4, "Campeche")) %>%
+  mutate(home = replace(home, home == 5, "Coahuila")) %>%
+  mutate(home = replace(home, home == 6, "Colima")) %>%
+  mutate(home = replace(home, home == 7, "Chiapas")) %>%
+  mutate(home = replace(home, home == 8, "Chihuahua")) %>%
+  mutate(home = replace(home, home == 9, "Durango")) %>%
+  mutate(home = replace(home, home == 10, "Ciudad de México")) %>%
+  mutate(home = replace(home, home == 11, "Guanajuato")) %>%
+  mutate(home = replace(home, home == 12, "Guerrero")) %>%
+  mutate(home = replace(home, home == 13, "Hidalgo")) %>%
+  mutate(home = replace(home, home == 14, "Jalisco")) %>%
+  mutate(home = replace(home, home == 15, "Estado de México")) %>%
+  mutate(home = replace(home, home == 16, "Michoacán")) %>%
+  mutate(home = replace(home, home == 17, "Morelos")) %>%
+  mutate(home = replace(home, home == 18, "Nayarit")) %>%
+  mutate(home = replace(home, home == 19, "Nuevo León")) %>%
+  mutate(home = replace(home, home == 20, "Oaxaca")) %>%
+  mutate(home = replace(home, home == 21, "Puebla")) %>%
+  mutate(home = replace(home, home == 22, "Querétaro")) %>%
+  mutate(home = replace(home, home == 23, "Quintana Roo")) %>%
+  mutate(home = replace(home, home == 24, "San Luis Potosí")) %>%
+  mutate(home = replace(home, home == 25, "Sinaloa")) %>%
+  mutate(home = replace(home, home == 26, "Sonora")) %>%
+  mutate(home = replace(home, home == 27, "Tabasco")) %>%
+  mutate(home = replace(home, home == 28, "Tamaulipas")) %>%
+  mutate(home = replace(home, home == 29, "Tlaxcala")) %>%
+  mutate(home = replace(home, home == 30, "Veracruz")) %>%
+  mutate(home = replace(home, home == 31, "Yucatán")) %>%
+  mutate(home = replace(home, home == 32, "Zacatecas")) %>%
+  select(home)
+  
+dim(data_states) 
+
+data_states <- data_states%>%
+  count(home)
+
+# Plot simple
+plot_states <- ggplot(data_states, (mapping = aes(x = factor(home), y = n ))) + 
+  geom_col() 
+
+plot_states
+
+# Plot personalizado (tema y títulos)  
+plot_states_2 <- ggplot(data_states, (mapping = aes(x = factor(home), y = n ))) + 
+  geom_col() + 
+  labs(y = "Personas registradas (n)", ## agregar título general y de los ejes del gráfico.
+       fill = "",
+       x = "Estado",
+       title = "Personas registradas por estado")  + # cambiar el fondo del gráfico 
+  theme_linedraw()
+
+plot_states_2
+
+# Plot personalizado (color)
+plot_states_3 <- ggplot(data_states, (mapping = aes(x = factor(home), y = n ))) + 
+  geom_col(fill= "#9e9ac8") + ## para asignar un color específico a las barras
+  labs(y = "Personas registradas (n)", ## agregar título general y de los ejes del gráfico.
+       fill = "",
+       x = "Estado",
+       title = "Personas registradas por estado")  + ## cambiar el fondo del gráfico 
+  theme_linedraw() 
+
+plot_states_3
+
+plot_states_4 <- ggplot(data_states, (mapping = aes(x = factor(home), y = n ))) + 
+  geom_col(fill= "#9e9ac8") + ## para asignar un color específico a las barras
+  labs(y = "Personas registradas (n)", ## agregar título general y de los ejes del gráfico.
+       fill = "",
+       x = "Estado",
+       title = "Personas registradas por estado")  + ## cambiar el fondo del gráfico 
+  theme_linedraw() +
+  theme(plot.title = element_text(hjust = 0.5, size = 12, face = "bold"),
+        plot.subtitle = element_text(hjust = 0.5, size = 12),
+        axis.title = element_text(size = 10, face = "bold"),
+        axis.title.x = element_text(hjust = 0.5),
+        axis.text.y = element_text(size =10),
+        axis.title.y = element_blank(),
+        axis.text.x = element_text(size=10,vjust = 1, hjust=1, angle = 45),
+        legend.position = "right"
+        )
+plot_states_4
+
+ggsave(filename= "~/Documents/R/Reporte_2025/WorkshopLupus/Edades.png", plot= plot_states_4, width = 15, height = 10, dpi=300, units = "in", bg = "white" )
+
+```
