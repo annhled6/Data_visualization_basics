@@ -1,0 +1,207 @@
+---
+title: "Lupus RGMX Análisis datos II"
+author: "Hernández-Ledesma Ana Laura"
+date: "2025-06-17"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## STEP 1: Loading required packages and reading database
+```{r Reading database}
+library(tidyverse)
+library(ggplot2)
+library(dplyr)
+library(cowplot)
+
+Data <- read.csv("~/Documents/R/Reporte_2025/Data_mayo25.csv", header=TRUE)
+dim(Data)
+```
+
+## STEP 2: Selecting and filtering data of interest
+```{r Selecting and filtering data of interest }
+data_curated <- Data %>%
+  filter(privacy_acceptance___1 == 1 &  (calculated_age >= 18 & calculated_age < 100)) %>%
+  filter(sex___1 != sex___2 & sex___2 != sex___1) %>% # para no tener registros con ambos sexos marcados
+  filter(lupus == 1) %>% # para quedarnos solo con lupus
+ select(
+    #Demographic data
+    sex___1, calculated_age, home,ocupation, school, comorbidities, health_provider) %>% 
+  rename( Sexo = sex___1 , Edad = calculated_age)
+data_curated <- na.omit(data_curated) 
+dim(data_curated)
+
+
+write.csv(data_curated, "~/Documents/R/Reporte_2025/WorkshopLupus/Data_clase2.csv", row.names = FALSE)
+data_curated <- read.csv("~/Documents/R/Reporte_2025/WorkshopLupus/Data_clase2.csv", header=TRUE)
+dim(data_curated)
+```
+
+## STEP 3: Demographic distribution by state
+```{r How many volunteers we have by state }
+data_states <- data_curated %>%
+  mutate(home = replace(home, home == 1, "Aguascalientes")) %>%
+  mutate(home = replace(home, home == 2, "Baja California")) %>%
+  mutate(home = replace(home, home == 3, "Baja California Sur")) %>%
+  mutate(home = replace(home, home == 4, "Campeche")) %>%
+  mutate(home = replace(home, home == 5, "Coahuila")) %>%
+  mutate(home = replace(home, home == 6, "Colima")) %>%
+  mutate(home = replace(home, home == 7, "Chiapas")) %>%
+  mutate(home = replace(home, home == 8, "Chihuahua")) %>%
+  mutate(home = replace(home, home == 9, "Durango")) %>%
+  mutate(home = replace(home, home == 10, "Ciudad de México")) %>%
+  mutate(home = replace(home, home == 11, "Guanajuato")) %>%
+  mutate(home = replace(home, home == 12, "Guerrero")) %>%
+  mutate(home = replace(home, home == 13, "Hidalgo")) %>%
+  mutate(home = replace(home, home == 14, "Jalisco")) %>%
+  mutate(home = replace(home, home == 15, "Estado de México")) %>%
+  mutate(home = replace(home, home == 16, "Michoacán")) %>%
+  mutate(home = replace(home, home == 17, "Morelos")) %>%
+  mutate(home = replace(home, home == 18, "Nayarit")) %>%
+  mutate(home = replace(home, home == 19, "Nuevo León")) %>%
+  mutate(home = replace(home, home == 20, "Oaxaca")) %>%
+  mutate(home = replace(home, home == 21, "Puebla")) %>%
+  mutate(home = replace(home, home == 22, "Querétaro")) %>%
+  mutate(home = replace(home, home == 23, "Quintana Roo")) %>%
+  mutate(home = replace(home, home == 24, "San Luis Potosí")) %>%
+  mutate(home = replace(home, home == 25, "Sinaloa")) %>%
+  mutate(home = replace(home, home == 26, "Sonora")) %>%
+  mutate(home = replace(home, home == 27, "Tabasco")) %>%
+  mutate(home = replace(home, home == 28, "Tamaulipas")) %>%
+  mutate(home = replace(home, home == 29, "Tlaxcala")) %>%
+  mutate(home = replace(home, home == 30, "Veracruz")) %>%
+  mutate(home = replace(home, home == 31, "Yucatán")) %>%
+  mutate(home = replace(home, home == 32, "Zacatecas")) %>%
+  mutate(Sexo = replace(Sexo, Sexo == 1, "Mujer")) %>%
+  mutate(Sexo = replace(Sexo, Sexo == 0, "Hombre")) %>%
+  count(home, Sexo)%>%
+  rename( Residencia = home)
+
+# Plot simple
+plot_states <- ggplot(data_states, (mapping = aes(x = factor(Residencia), y = n, fill = Sexo ))) + 
+  geom_col() 
+
+plot_states
+
+# Plot Bonito
+plot_states_2 <- ggplot(data_states, (mapping = aes(x = factor(Residencia), y = n, fill= Sexo ))) + 
+  geom_col() + 
+  labs(y = "Personas registradas (n)", ## agregar título general y de los ejes del gráfico.
+       fill = "Sexo",
+       x = "Estado de Residencia",
+       title = "Personas registradas por estado")  + ## cambiar el fondo del gráfico 
+  scale_fill_manual(values = c("Mujer"= "#ef3b2c", 
+                               "Hombre"= "#2b8cbe"))+ # para elegir los colores a usarse en las columnas
+  theme_linedraw() +
+  theme(plot.title = element_text(hjust = 0.5, size = 12, face = "bold"),
+        plot.subtitle = element_text(hjust = 0.5, size = 12),
+        axis.title = element_text(size = 12, face = "bold"),
+        axis.title.x = element_text(size = 10, face = "bold",hjust = 0.5),
+        axis.text.y = element_text(size =8),
+        axis.title.y = element_text(size = 10, face = "bold", hjust = 0.5),
+        axis.text.x = element_text(size=8,vjust = 1, hjust=1, angle = 45),
+        legend.position = "bottom" #Seleccionar posición de la leyenda
+        )
+plot_states_2
+
+states <- plot_grid(plot_states, plot_states_2, # Gráficos que se van a incluir
+          labels = c('A', 'B'), #Etiqueta que se les va a dar
+          ncol=2)  # Columnas en las que se van a presentar
+
+ggsave(filename= "~/Documents/R/Reporte_2025/WorkshopLupus/Estado_Residencia.png", plot= states, width = 20, height = 10, dpi=300, units = "in", bg = "white" )
+
+```
+## STEP 5: Geographic distribution
+```{r Geographic distribution}
+#### If mxmaps is not installed applied the next code
+#if (!require(devtools)) {
+ # install.packages("devtools")
+#}
+#devtools::install_github('diegovalle/mxmaps')
+#install.packages('mxmaps')
+library(mxmaps)
+
+#### Data preparation 
+### Create a data base with the information of the states
+States <- data_curated %>%  # asignar nombre a cada estado
+  mutate(home = replace(home, home == 1, "Aguascalientes")) %>% 
+  mutate(home = replace(home, home == 2, "Baja California")) %>%
+  mutate(home = replace(home, home == 3, "Baja California Sur")) %>%
+  mutate(home = replace(home, home == 4, "Campeche")) %>%
+  mutate(home = replace(home, home == 5, "Coahuila")) %>%
+  mutate(home = replace(home, home == 6, "Colima")) %>%
+  mutate(home = replace(home, home == 7, "Chiapas")) %>%
+  mutate(home = replace(home, home == 8, "Chihuahua")) %>%
+  mutate(home = replace(home, home == 9, "Durango")) %>%
+  mutate(home = replace(home, home == 10, "Ciudad de México")) %>%
+  mutate(home = replace(home, home == 11, "Guanajuato")) %>%
+  mutate(home = replace(home, home == 12, "Guerrero")) %>%
+  mutate(home = replace(home, home == 13, "Hidalgo")) %>%
+  mutate(home = replace(home, home == 14, "Jalisco")) %>%
+  mutate(home = replace(home, home == 15, "Estado de México")) %>%
+  mutate(home = replace(home, home == 16, "Michoacán")) %>%
+  mutate(home = replace(home, home == 17, "Morelos")) %>%
+  mutate(home = replace(home, home == 18, "Nayarit")) %>%
+  mutate(home = replace(home, home == 19, "Nuevo León")) %>%
+  mutate(home = replace(home, home == 20, "Oaxaca")) %>%
+  mutate(home = replace(home, home == 21, "Puebla")) %>%
+  mutate(home = replace(home, home == 22, "Querétaro")) %>%
+  mutate(home = replace(home, home == 23, "Quintana Roo")) %>%
+  mutate(home = replace(home, home == 24, "San Luis Potosí")) %>%
+  mutate(home = replace(home, home == 25, "Sinaloa")) %>%
+  mutate(home = replace(home, home == 26, "Sonora")) %>%
+  mutate(home = replace(home, home == 27, "Tabasco")) %>%
+  mutate(home = replace(home, home == 28, "Tamaulipas")) %>%
+  mutate(home = replace(home, home == 29, "Tlaxcala")) %>%
+  mutate(home = replace(home, home == 30, "Veracruz")) %>%
+  mutate(home = replace(home, home == 31, "Yucatán")) %>%
+  mutate(home = replace(home, home == 32, "Zacatecas")) %>%
+  count(home) #Contar número de registros por estado
+
+regions <- data.frame( # Crear la base de datos con los nombres/IDs de cada estado
+  "region" = 1:32, 
+  "state_name" = c("Aguascalientes", "Baja California", "Baja California Sur", "Campeche", "Coahuila", "Colima", "Chiapas", "Chihuahua", "Ciudad de México", "Durango", "Guanajuato", "Guerrero","Hidalgo", "Jalisco", "Estado de México", "Michoacán", "Morelos", "Nayarit", "Nuevo León", "Oaxaca", "Puebla", "Querétaro", "Quintana Roo", "San Luis Potosí", "Sinaloa", "Sonora", "Tabasco", "Tamaulipas", "Tlaxcala", "Veracruz","Yucatán", "Zacatecas")) # ordenar los estados de acuerdo a la disposicion en  mxmaps
+
+home <- merge(States, regions, by.x = "home", by.y = "state_name") #Unir la base de datos del número de registro y los ids/nombres
+home <- home %>%
+  rename(registers=n, state_name=home)
+
+### Mapping registries
+breaks <- c(0,10,25,50, 75, 100, 200, 300, Inf) 
+colors <- c("#efedf5","#dadaeb","#bcbddc","#9e9ac8","#807dba","#6a51a3","#54278f","#3f007d")
+home$breaks <- cut(home$registers, breaks)
+home$value <- home$breaks 
+
+##Graph map
+
+map1 <-mxstate_choropleth(home,
+                   title = "Distribución geográfica de \n las personas registradas")
+
+map2 <- mxstate_choropleth(home,
+                   title = "Distribución geográfica de \n las personas registradas")+ 
+  scale_fill_manual(breaks = levels(home$breaks),
+                    values = colors,
+                    labels=c("1-10", "11-25", "26-50", "51-75", "76-100", "101-200", "201-300",  ">300"),
+                    na.value="white")+
+  labs(fill="Personas registradas")+
+  theme(plot.title = element_text(hjust = 0.9, vjust = 0.5,  size = 12, face = "bold"),
+        plot.subtitle = element_text(hjust = 0.5, size = 8),
+        legend.position = "right",
+        legend.title = element_text(size=12),
+        legend.text = element_text(size = 12, hjust = 0.5),
+        legend.key.size = unit(1, 'cm'),
+        legend.title.align = 0.5)
+
+fig1 <- plot_grid(states, map2, # Gráficos que se van a incluir
+          labels = c('','C'), #Etiqueta que se les va a dar
+          ncol=1,   # Columnas en las que se van a presentar
+          rel_widths = c(0.7,1),
+          rel_heights = c(0.5,1))
+ggsave(filename= "~/Documents/R/Reporte_2025/WorkshopLupus/Fig1.png", plot= fig1, width = 30, height = 25, dpi=300, units = "cm", bg = "white" )
+
+
+```
